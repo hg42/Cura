@@ -1,0 +1,9 @@
+syntax: glob
+.git
+*.deb
+*.pyc
+scripts/linux/debian/usr
+Power
+CuraEngine
+.hgignore
+.hgsubstate
