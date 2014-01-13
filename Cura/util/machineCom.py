@@ -431,7 +431,7 @@ class MachineCom(object):
 			elif self._state == self.STATE_CONNECTING:
 				if line == '' or 'wait' in line:        # 'wait' needed for Repetier (kind of watchdog)
 					self._sendCommand("M105")
-				elif 'ok' in line:
+				elif 'ok' in line or 'start' in line:
 					self._changeState(self.STATE_OPERATIONAL)
 				if time.time() > timeout:
 					self.close()
