@@ -429,9 +429,11 @@ class MachineCom(object):
 				else:
 					self._testingBaudrate = False
 			elif self._state == self.STATE_CONNECTING:
+				self._log("connecting...line: '%s'" % (line))
 				if line == '' or 'wait' in line:        # 'wait' needed for Repetier (kind of watchdog)
+					self._log("connecting...send M105")
 					self._sendCommand("M105")
-				elif 'ok' in line:
+				elif 'ok' in line or 'start' in line:
 					self._changeState(self.STATE_OPERATIONAL)
 				if time.time() > timeout:
 					self.close()
