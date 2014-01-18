@@ -13,7 +13,7 @@ class printWindow(wx.Frame):
 	"Main user interface window"
 
 	def __init__(self, printerConnection):
-		super(printWindow, self).__init__(None, -1, title=_("Printing"))
+		super(printWindow, self).__init__(None, -1, title=_("Printing2"))
 		self._printerConnection = printerConnection
 		self.lastUpdateTime = 0
 

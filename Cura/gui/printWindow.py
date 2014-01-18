@@ -132,7 +132,7 @@ class printWindow(wx.Frame):
 	"Main user interface window"
 
 	def __init__(self):
-		super(printWindow, self).__init__(None, -1, title=_("Printing"))
+		super(printWindow, self).__init__(None, -1, title=_("Printing1"))
 		t = time.time()
 		self.machineCom = None
 		self.gcode = None
