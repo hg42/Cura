@@ -344,6 +344,11 @@ class MachineCom(object):
 			if line is None:
 				break
 
+			if 'Error' in line:
+				self._callback.mcMessage("*** " + line)
+			elif line.startswith('echo:'):
+				self._callback.mcMessage("| " + line[5:])
+
 			#No matter the state, if we see an fatal error, goto the error state and store the error for reference.
 			# Only goto error on known fatal errors.
 			if line.startswith('Error:'):
