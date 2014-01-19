@@ -351,7 +351,7 @@ class MachineCom(object):
 				# Marlin reports an MIN/MAX temp error as "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
 				#	But a bed temp error is reported as "Error: Temperature heated bed switched off. MAXTEMP triggered !!"
 				#	So we can have an extra newline in the most common case. Awesome work people.
-				if re.match('Error:[0-9]\n', line):
+				if re.match('Error:[0-9]+\n', line):
 					line = line.rstrip() + self._readline()
 				#Skip the communication errors, as those get corrected.
 				if 'Extruder switched off' in line or 'Temperature heated bed switched off' in line or 'Something is wrong, please turn off the printer.' in line:
