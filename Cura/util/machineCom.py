@@ -444,9 +444,7 @@ class MachineCom(object):
 				else:
 					self._testingBaudrate = False
 			elif self._state == self.STATE_CONNECTING:
-				self._log("connecting...line: '%s'" % (line))
 				if line == '' or 'wait' in line:        # 'wait' needed for Repetier (kind of watchdog)
-					self._log("connecting...send M105")
 					self._sendCommand("M105")
 				elif 'ok' in line or 'SD' in line:
 					self._changeState(self.STATE_OPERATIONAL)
@@ -462,23 +460,26 @@ class MachineCom(object):
 						self.sendCommand("M105")
 					tempRequestTimeout = time.time() + 5
 			elif self._state == self.STATE_PRINTING:
-				#Even when printing request the temperature every 5 seconds.
-				if time.time() > tempRequestTimeout:
-					if self._extruderCount > 0:
-						self._temperatureRequestExtruder = (self._temperatureRequestExtruder + 1) % self._extruderCount
-						self.sendCommand("M105 T%d" % (self._temperatureRequestExtruder))
-					else:
-						self.sendCommand("M105")
-					tempRequestTimeout = time.time() + 5
 				if line == '' and time.time() > timeout:
-					self._log("Communication timeout during printing, forcing a line")
+					line = self._gcodeList[self._gcodePos]
+					self._callback.mcMessage("Communication timeout during printing, forcing a line")
+					self._callback.mcMessage("  " + str(self._gcodePos) + ": " + line)
 					line = 'ok'
 				if 'ok' in line:
-					timeout = time.time() + 5
+					#Even when printing request the temperature every 5 seconds.
+					#but only after ack ('ok')
+					if time.time() > tempRequestTimeout:
+						if self._extruderCount > 0:
+							self._temperatureRequestExtruder = (self._temperatureRequestExtruder + 1) % self._extruderCount
+							self.sendCommand("M105 T%d" % (self._temperatureRequestExtruder))
+						else:
+							self.sendCommand("M105")
+						tempRequestTimeout = time.time() + 5
 					if not self._commandQueue.empty():
 						self._sendCommand(self._commandQueue.get())
 					else:
 						self._sendNext()
+					timeout = time.time() + 5
 				elif "resend" in line.lower() or "rs" in line:
 					self._callback.mcMessage(" * " + line[0:-1])
 					try:
