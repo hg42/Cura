@@ -344,10 +344,11 @@ class MachineCom(object):
 			if line is None:
 				break
 
+			#self._callback.mcMessage("> " + line[0:-1])
 			if 'Error' in line:
-				self._callback.mcMessage("*** " + line)
+				self._callback.mcMessage("*** " + line[0:-1])
 			elif line.startswith('echo:'):
-				self._callback.mcMessage("| " + line[5:])
+				self._callback.mcMessage("| " + line[5:-1])
 
 			#No matter the state, if we see an fatal error, goto the error state and store the error for reference.
 			# Only goto error on known fatal errors.
@@ -361,7 +362,7 @@ class MachineCom(object):
 				#Skip the communication errors, as those get corrected.
 				if 'Extruder switched off' in line or 'Temperature heated bed switched off' in line or 'Something is wrong, please turn off the printer.' in line:
 					if not self.isError():
-						self._errorValue = line[6:]
+						self._errorValue = line[6:-1]
 						self._changeState(self.STATE_ERROR)
 			if ' T:' in line or line.startswith('T:'):
 				try:
@@ -470,6 +471,7 @@ class MachineCom(object):
 					else:
 						self._sendNext()
 				elif "resend" in line.lower() or "rs" in line:
+					self._callback.mcMessage(" * " + line[0:-1])
 					try:
 						self._gcodePos = int(line.replace("N:"," ").replace("N"," ").replace(":"," ").split()[-1])
 					except:
