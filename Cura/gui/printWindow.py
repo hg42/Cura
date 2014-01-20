@@ -632,7 +632,6 @@ class printWindow(wx.Frame):
 		return True
 
 	def mcLog(self, message):
-		#print message
 		#wx.CallAfter(self.AddTermLog, message + "\n")
 		pass
 
@@ -666,8 +665,7 @@ class printWindow(wx.Frame):
 		wx.CallAfter(self.UpdateProgress)
 
 	def mcMessage(self, message):
-		print message
-		wx.CallAfter(self.AddTermLog, message)
+		wx.CallAfter(self.AddTermLog, message + "\n")
 
 	def mcProgress(self, lineNr):
 		wx.CallAfter(self.UpdateProgress)
