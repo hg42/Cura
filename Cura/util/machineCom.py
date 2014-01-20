@@ -360,7 +360,9 @@ class MachineCom(object):
 				if re.match('Error:[0-9]+\n', line):
 					line = line.rstrip() + self._readline()
 				#Skip the communication errors, as those get corrected.
-				if 'Extruder switched off' in line or 'Temperature heated bed switched off' in line or 'Something is wrong, please turn off the printer.' in line:
+				if ('Extruder switched off' in line or
+						'Temperature heated bed switched off' in line or
+						'Something is wrong, please turn off the printer.' in line):
 					if not self.isError():
 						self._errorValue = line[6:-1]
 						self._changeState(self.STATE_ERROR)
@@ -380,8 +382,15 @@ class MachineCom(object):
 					t = time.time()
 					self._heatupWaitTimeLost = t - self._heatupWaitStartTime
 					self._heatupWaitStartTime = t
-			elif line.strip() != '' and line.strip() != 'ok' and not line.startswith('Resend:') and not line.startswith('Error:checksum mismatch') and not line.startswith('Error:Line Number is not Last Line Number+1') and line != 'echo:Unknown command:""\n' and self.isOperational():
-				self._callback.mcMessage(line)
+			elif (line.strip() != '' and
+					line.strip() != 'ok' and
+					not line.startswith('Resend:') and
+					not line.startswith('Error:') and
+					#not line.startswith('Error:checksum mismatch') and
+					#not line.startswith('Error:Line Number is not Last Line Number+1') and
+					line != 'echo:Unknown command:""\n' and
+					self.isOperational()):
+				self._callback.mcMessage(line[0:-1])
 
 			if self._state == self.STATE_DETECT_BAUDRATE or self._state == self.STATE_DETECT_SERIAL:
 				if line == '' or time.time() > timeout:
