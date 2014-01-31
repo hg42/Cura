@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 __copyright__ = "Copyright (C) 2013 David Braam - Released under terms of the AGPLv3 License"
 
 import wx
@@ -267,8 +266,7 @@ class SceneView(openglGui.glGuiPanel):
 			connection.window = printWindow2.printWindow(connection)
 		connection.window.Show()
 		connection.window.Raise()
-		#TODO: Fix for _engine.getResult
-		if not connection.loadFile(self._gcodeFilename):
+		if not connection.loadGCodeData(StringIO.StringIO(self._engine.getResult().getGCode())):
 			if connection.isPrinting():
 				self.notification.message("Cannot start print, because other print still running.")
 			else:

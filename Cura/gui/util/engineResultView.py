@@ -18,6 +18,7 @@ class engineResultView(object):
 		self._parent = parent
 		self._result = None
 		self._enabled = False
+		self._gcodeLoadProgress = 0
 		self._layerVBOs = []
 		self._layer20VBOs = []
 
@@ -43,12 +44,25 @@ class engineResultView(object):
 		self._enabled = enabled
 		self.layerSelect.setHidden(not enabled)
 
+	def _gcodeLoadCallback(self, result, progress):
+		if result != self._result:
+			#Abort loading from this thread.
+			return True
+		self._gcodeLoadProgress = progress
+		self._parent._queueRefresh()
+		return False
+
 	def OnDraw(self):
 		if not self._enabled:
 			return
 
-		if self._result is not None and self._result._polygons is not None:
-			self.layerSelect.setRange(1, len(self._result._polygons))
+		result = self._result
+		if result is not None and result._polygons is not None:
+			self.layerSelect.setRange(1, len(result._polygons))
+		if result is not None:
+			gcodeLayers = result.getGCodeLayers(self._gcodeLoadCallback)
+		else:
+			gcodeLayers = None
 
 		glPushMatrix()
 		glEnable(GL_BLEND)
@@ -58,66 +72,94 @@ class engineResultView(object):
 
 		layerNr = self.layerSelect.getValue()
 		if layerNr == self.layerSelect.getMaxValue():
-			layerNr = max(layerNr, len(self._result._polygons))
+			layerNr = max(layerNr, len(result._polygons))
 		viewZ = (layerNr - 1) * profile.getProfileSettingFloat('layer_height') + profile.getProfileSettingFloat('bottom_thickness')
 		self._parent._viewTarget[2] = viewZ
 		msize = max(profile.getMachineSettingFloat('machine_width'), profile.getMachineSettingFloat('machine_depth'))
-		lineTypeList = [('inset0',[1,0,0,1]), ('insetx',[0,1,0,1]), ('openoutline',[1,0,0,1]), ('skin',[1,1,0,1]), ('infill',[1,1,0,1]), ('support',[0,1,1,1]), ('outline',[0,0,0,1])]
-		n = 0
-		layers = None #self._result.getGCodeLayers()
+		lineTypeList = [
+			('inset0',     'WALL-OUTER', [1,0,0,1]),
+			('insetx',     'WALL-INNER', [0,1,0,1]),
+			('openoutline', None,        [1,0,0,1]),
+			('skin',       'FILL',       [1,1,0,1]),
+			('infill',      None,        [1,1,0,1]),
+			('support',    'SUPPORT',    [0,1,1,1]),
+			('skirt',      'SKIRT',      [0,1,1,1]),
+			('outline',     None,        [0,0,0,1])
+		]
+		n = layerNr - 1
 		generatedVBO = False
-		while n < layerNr:
-			if layerNr - n > 30:
+		while n >= 0:
+			if layerNr - n > 30 and n % 20 == 0:
 				idx = n / 20
 				while len(self._layer20VBOs) < idx + 1:
 					self._layer20VBOs.append({})
-				if self._result is not None and self._result._polygons is not None and n + 20 < len(self._result._polygons):
+				if result is not None and result._polygons is not None and n + 20 < len(result._polygons):
 					layerVBOs = self._layer20VBOs[idx]
-					for typeName, color in lineTypeList:
-						if typeName in self._result._polygons[n + 19]:
-							if typeName not in self._layer20VBOs[idx]:
+					for typeName, typeNameGCode, color in lineTypeList:
+						if (typeName in result._polygons[n + 19]) or (typeName == 'skirt' and typeName in result._polygons[n]):
+							if typeName not in layerVBOs:
 								if generatedVBO:
 									continue
 								polygons = []
 								for i in xrange(0, 20):
-									if typeName in self._result._polygons[n + i]:
-										polygons += self._result._polygons[n + i][typeName]
+									if typeName in result._polygons[n + i]:
+										polygons += result._polygons[n + i][typeName]
 								layerVBOs[typeName] = self._polygonsToVBO_lines(polygons)
 								generatedVBO = True
 							glColor4f(color[0]*0.5,color[1]*0.5,color[2]*0.5,color[3])
 							layerVBOs[typeName].render()
-				n += 20
+				n -= 20
 			else:
-				while len(self._layerVBOs) < n + 1:
-					self._layerVBOs.append({})
 				c = 1.0 - ((layerNr - n) - 1) * 0.05
 				c = max(0.5, c)
+				while len(self._layerVBOs) < n + 1:
+					self._layerVBOs.append({})
 				layerVBOs = self._layerVBOs[n]
-				if layers is not None and n < len(layers):
-					if 'GCODE-FILL' not in layerVBOs:
-						layerVBOs['GCODE-FILL'] = self._gcodeToVBO_quads(layers[n:n+1], 'FILL')
-					glColor4f(c,c,0,1)
-					layerVBOs['GCODE-FILL'].render()
-				elif self._result is not None and self._result._polygons is not None and n < len(self._result._polygons):
-					polygons = self._result._polygons[n]
-					for typeName, color in lineTypeList:
+				if gcodeLayers is not None and layerNr - 10 < n < (len(gcodeLayers) - 1):
+					for typeNamePolygons, typeName, color in lineTypeList:
+						if typeName is None:
+							continue
+						if 'GCODE-' + typeName not in layerVBOs:
+							layerVBOs['GCODE-' + typeName] = self._gcodeToVBO_quads(gcodeLayers[n+1:n+2], typeName)
+						glColor4f(color[0]*c,color[1]*c,color[2]*c,color[3])
+						layerVBOs['GCODE-' + typeName].render()
+
+					if n == layerNr - 1:
+						if 'GCODE-MOVE' not in layerVBOs:
+							layerVBOs['GCODE-MOVE'] = self._gcodeToVBO_lines(gcodeLayers[n+1:n+2])
+						glColor4f(0,0,c,1)
+						layerVBOs['GCODE-MOVE'].render()
+				elif result is not None and result._polygons is not None and n < len(result._polygons):
+					polygons = result._polygons[n]
+					for typeName, typeNameGCode, color in lineTypeList:
 						if typeName in polygons:
 							if typeName not in layerVBOs:
 								layerVBOs[typeName] = self._polygonsToVBO_lines(polygons[typeName])
 							glColor4f(color[0]*c,color[1]*c,color[2]*c,color[3])
 							layerVBOs[typeName].render()
-				n += 1
+				n -= 1
 		glPopMatrix()
 		if generatedVBO:
 			self._parent._queueRefresh()
+
+		if gcodeLayers is not None and self._gcodeLoadProgress != 0.0 and self._gcodeLoadProgress != 1.0:
+			glPushMatrix()
+			glLoadIdentity()
+			glTranslate(0,-0.8,-2)
+			glColor4ub(60,60,60,255)
+			opengl.glDrawStringCenter(_("Loading toolpath for visualization (%d%%)") % (self._gcodeLoadProgress * 100))
+			glPopMatrix()
 
 	def _polygonsToVBO_lines(self, polygons):
 		verts = numpy.zeros((0, 3), numpy.float32)
 		indices = numpy.zeros((0), numpy.uint32)
 		for poly in polygons:
-			i = numpy.arange(len(verts), len(verts) + len(poly) + 1, 1, numpy.uint32)
-			i[-1] = len(verts)
-			i = numpy.dstack((i[0:-1],i[1:])).flatten()
+			if len(poly) > 2:
+				i = numpy.arange(len(verts), len(verts) + len(poly) + 1, 1, numpy.uint32)
+				i[-1] = len(verts)
+				i = numpy.dstack((i[0:-1],i[1:])).flatten()
+			else:
+				i = numpy.arange(len(verts), len(verts) + len(poly), 1, numpy.uint32)
 			indices = numpy.concatenate((indices, i), 0)
 			verts = numpy.concatenate((verts, poly), 0)
 		return opengl.GLVBO(GL_LINES, verts, indicesArray=indices)
@@ -200,6 +242,26 @@ class engineResultView(object):
 					verts = numpy.concatenate((verts, b))
 					indices = numpy.concatenate((indices, i))
 		return opengl.GLVBO(GL_QUADS, verts, indicesArray=indices)
+
+	def _gcodeToVBO_lines(self, gcodeLayers):
+		verts = numpy.zeros((0,3), numpy.float32)
+		indices = numpy.zeros((0), numpy.uint32)
+		for layer in gcodeLayers:
+			for path in layer:
+				if path['type'] == 'move':
+					a = path['points'] + numpy.array([0,0,0.02], numpy.float32)
+					i = numpy.arange(len(verts), len(verts) + len(a), 1, numpy.uint32)
+					i = numpy.dstack((i[0:-1],i[1:])).flatten()
+					verts = numpy.concatenate((verts, a))
+					indices = numpy.concatenate((indices, i))
+				if path['type'] == 'retract':
+					a = path['points'] + numpy.array([0,0,0.02], numpy.float32)
+					a = numpy.concatenate((a[:-1], a[1:] + numpy.array([0,0,1], numpy.float32)), 1)
+					a = a.reshape((len(a) * 2, 3))
+					i = numpy.arange(len(verts), len(verts) + len(a), 1, numpy.uint32)
+					verts = numpy.concatenate((verts, a))
+					indices = numpy.concatenate((indices, i))
+		return opengl.GLVBO(GL_LINES, verts, indicesArray=indices)
 
 	def OnKeyChar(self, keyCode):
 		if not self._enabled:
