@@ -16,13 +16,13 @@ class printerConnectionGroup(object):
 		return 5
 
 	def getPriority(self):
-		return -1
+		return -100
 
 	def __cmp__(self, other):
 		return self.getPriority() - other.getPriority()
 
 	def __repr__(self):
-		return self.name
+		return '%s %d' % (self._name, self.getPriority())
 
 #Base class for different printer connection implementations.
 # A printer connection can connect to printers in different ways, trough network, USB or carrier pigeons.
@@ -73,6 +73,10 @@ class printerConnectionBase(object):
 
 	#Is the active connection open right now.
 	def isActiveConnectionOpen(self):
+		return False
+
+	#Are we trying to open an active connection right now.
+	def isActiveConnectionOpening(self):
 		return False
 
 	#Returns true if we have the ability to pause the file printing.

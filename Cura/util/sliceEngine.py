@@ -1,3 +1,7 @@
+"""
+Slice engine communication.
+This module handles all communication with the slicing engine.
+"""
 __copyright__ = "Copyright (C) 2013 David Braam - Released under terms of the AGPLv3 License"
 import subprocess
 import time
@@ -257,10 +261,10 @@ class Engine(object):
 
 		extruderCount = max(extruderCount, profile.minimalExtruderCount())
 
-		commandList = [getEngineFilename(), '-vvv']
+		commandList = [getEngineFilename(), '-v', '-p']
 		for k, v in self._engineSettings(extruderCount).iteritems():
 			commandList += ['-s', '%s=%s' % (k, str(v))]
-		commandList += ['-g', '%d' % self._serverPortNr]
+		commandList += ['-g', '%d' % (self._serverPortNr)]
 		self._objCount = 0
 		engineModelData = []
 		hash = hashlib.sha512()
@@ -437,6 +441,7 @@ class Engine(object):
 			'retractionSpeed': int(profile.getProfileSettingFloat('retraction_speed')),
 			'retractionMinimalDistance': int(profile.getProfileSettingFloat('retraction_min_travel') * 1000),
 			'retractionAmountExtruderSwitch': int(profile.getProfileSettingFloat('retraction_dual_amount') * 1000),
+			'retractionZHop': int(profile.getProfileSettingFloat('retraction_hop') * 1000),
 			'minimalExtrusionBeforeRetraction': int(profile.getProfileSettingFloat('retraction_minimal_extrusion') * 1000),
 			'enableCombing': 1 if profile.getProfileSetting('retraction_combing') == 'True' else 0,
 			'multiVolumeOverlap': int(profile.getProfileSettingFloat('overlap_dual') * 1000),

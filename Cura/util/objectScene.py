@@ -1,3 +1,9 @@
+"""
+The objectScene module contain a objectScene class,
+this class contains a group of printableObjects that are located on the build platform.
+
+The objectScene handles the printing order of these objects, and if they collide.
+"""
 __copyright__ = "Copyright (C) 2013 David Braam - Released under terms of the AGPLv3 License"
 import random
 import numpy
@@ -241,6 +247,8 @@ class Scene(object):
 
 	def checkPlatform(self, obj):
 		area = obj._printAreaHull + obj.getPosition()
+		if obj.getSize()[2] > self._machineSize[2]:
+			return False
 		if not polygon.fullInside(area, self._machinePolygons[0]):
 			return False
 		#Check the "no go zones"

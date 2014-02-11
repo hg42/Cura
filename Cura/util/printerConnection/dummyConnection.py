@@ -16,6 +16,12 @@ class dummyConnectionGroup(printerConnectionBase.printerConnectionGroup):
 	def getAvailableConnections(self):
 		return self._list
 
+	def getIconID(self):
+		return 5
+
+	def getPriority(self):
+		return -100
+
 #Dummy printer class which is always
 class dummyConnection(printerConnectionBase.printerConnectionBase):
 	def __init__(self, name):
@@ -49,6 +55,7 @@ class dummyConnection(printerConnectionBase.printerConnectionBase):
 
 	#Start printing the previously loaded file
 	def startPrint(self):
+		print 'startPrint', self._printing, self._lineCount
 		if self._printing or self._lineCount < 1:
 			return
 		self._progressLine = 0
@@ -74,7 +81,7 @@ class dummyConnection(printerConnectionBase.printerConnectionBase):
 	# Get the connection status string. This is displayed to the user and can be used to communicate
 	#  various information to the user.
 	def getStatusString(self):
-		return "DUMMY!\n%i %i\n%i" % (self._progressLine, self._lineCount, self._printing)
+		return "DUMMY!:%i %i:%i" % (self._progressLine, self._lineCount, self._printing)
 
 	def _dummyThread(self):
 		while True:
