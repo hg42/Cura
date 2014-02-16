@@ -5,7 +5,19 @@ These settings can be globally accessed and modified.
 from __future__ import division
 __copyright__ = "Copyright (C) 2013 David Braam - Released under terms of the AGPLv3 License"
 
-import os, traceback, math, re, zlib, base64, time, sys, platform, glob, string, stat, types
+import os
+import traceback
+import math
+import re
+import zlib
+import base64
+import time
+import sys
+import platform
+import glob
+import string
+import stat
+import types
 import cPickle as pickle
 import numpy
 if sys.version_info[0] < 3:
@@ -13,7 +25,6 @@ if sys.version_info[0] < 3:
 else:
 	import configparser as ConfigParser
 
-from Cura.util import resources
 from Cura.util import version
 from Cura.util import validators
 
@@ -28,15 +39,17 @@ settingsList = []
 _selectedMachineIndex = 0
 
 class setting(object):
-	#A setting object contains a configuration setting. These are globally accessible trough the quick access functions
-	# and trough the settingsDictionary function.
-	# Settings can be:
-	# * profile settings (settings that effect the slicing process and the print result)
-	# * preferences (settings that effect how cura works and acts)
-	# * machine settings (settings that relate to the physical configuration of your machine)
-	# * alterations (bad name copied from Skeinforge. These are the start/end code pieces)
-	# Settings have validators that check if the value is valid, but do not prevent invalid values!
-	# Settings have conditions that enable/disable this setting depending on other settings. (Ex: Dual-extrusion)
+	"""
+		A setting object contains a configuration setting. These are globally accessible trough the quick access functions
+		and trough the settingsDictionary function.
+		Settings can be:
+		* profile settings (settings that effect the slicing process and the print result)
+		* preferences (settings that effect how cura works and acts)
+		* machine settings (settings that relate to the physical configuration of your machine)
+		* alterations (bad name copied from Skeinforge. These are the start/end code pieces)
+		Settings have validators that check if the value is valid, but do not prevent invalid values!
+		Settings have conditions that enable/disable this setting depending on other settings. (Ex: Dual-extrusion)
+	"""
 	def __init__(self, name, default, type, category, subcategory):
 		self._name = name
 		self._label = name
@@ -119,7 +132,7 @@ class setting(object):
 		self._values[index] = unicode(value)
 
 	def getValueIndex(self):
-		if self.isMachineSetting():
+		if self.isMachineSetting() or self.isProfile():
 			global _selectedMachineIndex
 			return _selectedMachineIndex
 		return 0
@@ -185,7 +198,7 @@ setting('retraction_combing',       True, bool,  'expert',   _('Retraction')).se
 setting('retraction_minimal_extrusion',0.02, float,'expert', _('Retraction')).setRange(0).setLabel(_("Minimal extrusion before retracting (mm)"), _("The minimal amount of extrusion that needs to be done before retracting again if a retraction needs to happen before this minimal is reached the retraction is ignored.\nThis avoids retraction a lot on the same piece of filament which flattens the filament and causes grinding issues."))
 setting('retraction_hop',            0.0, float, 'expert',   _('Retraction')).setRange(0).setLabel(_("Z hop when retracting (mm)"), _("When a retraction is done, the head is lifted by this amount to travel over the print. A value of 0.075 works good. This feature has a lot of positive effect on delta towers."))
 setting('bottom_thickness',          0.3, float, 'advanced', _('Quality')).setRange(0).setLabel(_("Initial layer thickness (mm)"), _("Layer thickness of the bottom layer. A thicker bottom layer makes sticking to the bed easier. Set to 0.0 to have the bottom layer thickness the same as the other layers."))
-setting('object_sink',               0.0, float, 'advanced', _('Quality')).setLabel(_("Cut off object bottom (mm)"), _("Sinks the object into the platform, this can be used for objects that do not have a flat bottom and thus create a too small first layer."))
+setting('object_sink',               0.0, float, 'advanced', _('Quality')).setRange(0).setLabel(_("Cut off object bottom (mm)"), _("Sinks the object into the platform, this can be used for objects that do not have a flat bottom and thus create a too small first layer."))
 #setting('enable_skin',             False, bool,  'advanced', _('Quality')).setLabel(_("Duplicate outlines"), _("Skin prints the outer lines of the prints twice, each time with half the thickness. This gives the illusion of a higher print quality."))
 setting('overlap_dual',             0.15, float, 'advanced', _('Quality')).setLabel(_("Dual extrusion overlap (mm)"), _("Add a certain amount of overlapping extrusion on dual-extrusion prints. This bonds the different colors better together."))
 setting('travel_speed',            150.0, float, 'advanced', _('Speed')).setRange(0.1).setLabel(_("Travel speed (mm/s)"), _("Speed at which travel moves are done, a high quality build Ultimaker can reach speeds of 250mm/s. But some machines might miss steps then."))
@@ -207,6 +220,7 @@ setting('cool_head_lift',          False, bool,  'expert',   _('Cool')).setLabel
 setting('solid_top', True, bool, 'expert', _('Infill')).setLabel(_("Solid infill top"), _("Create a solid top surface, if set to false the top is filled with the fill percentage. Useful for cups/vases."))
 setting('solid_bottom', True, bool, 'expert', _('Infill')).setLabel(_("Solid infill bottom"), _("Create a solid bottom surface, if set to false the bottom is filled with the fill percentage. Useful for buildings."))
 setting('fill_overlap', 15, int, 'expert', _('Infill')).setRange(0,100).setLabel(_("Infill overlap (%)"), _("Amount of overlap between the infill and the walls. There is a slight overlap with the walls and the infill so the walls connect firmly to the infill."))
+setting('support_type', 'Grid', ['Grid', 'Lines'], 'expert', _('Support')).setLabel(_("Structure type"), _("The type of support structure.\nGrid is very strong and can come off in 1 piece, however, sometimes it is too strong.\nLines are single walled lines that break off one at a time. Which is more work to remove, but as it is less strong it does work better on tricky prints."))
 setting('support_angle', 60, float, 'expert', _('Support')).setRange(0,90).setLabel(_("Overhang angle for support (deg)"), _("The minimal angle that overhangs need to have to get support. With 0 degree being horizontal and 90 degree being vertical."))
 setting('support_fill_rate', 15, int, 'expert', _('Support')).setRange(0,100).setLabel(_("Fill amount (%)"), _("Amount of infill structure in the support material, less material gives weaker support which is easier to remove. 15% seems to be a good average."))
 setting('support_xy_distance', 0.7, float, 'expert', _('Support')).setRange(0,10).setLabel(_("Distance X/Y (mm)"), _("Distance of the support material from the print, in the X/Y directions.\n0.7mm gives a nice distance from the print so the support does not stick to the print."))
@@ -347,6 +361,7 @@ setting('model_colour', '#FFC924', str, 'preference', 'hidden').setLabel(_('Mode
 setting('model_colour2', '#CB3030', str, 'preference', 'hidden').setLabel(_('Model colour (2)'), _('Display color for second extruder'))
 setting('model_colour3', '#DDD93C', str, 'preference', 'hidden').setLabel(_('Model colour (3)'), _('Display color for third extruder'))
 setting('model_colour4', '#4550D3', str, 'preference', 'hidden').setLabel(_('Model colour (4)'), _('Display color for forth extruder'))
+setting('printing_window', 'Basic', ['Basic'], 'preference', 'hidden').setLabel('Printing window type')
 
 setting('window_maximized', 'True', bool, 'preference', 'hidden')
 setting('window_pos_x', '-1', float, 'preference', 'hidden')
@@ -483,36 +498,62 @@ def getAlternativeBasePaths():
 def getDefaultProfilePath():
 	return os.path.join(getBasePath(), 'current_profile.ini')
 
-def loadProfile(filename):
+def loadProfile(filename, allMachines = False):
+	global settingsList
 	#Read a configuration file as global config
 	profileParser = ConfigParser.ConfigParser()
 	try:
 		profileParser.read(filename)
 	except ConfigParser.ParsingError:
 		return
-	global settingsList
-	for set in settingsList:
-		if set.isPreference():
-			continue
-		section = 'profile'
-		if set.isAlteration():
-			section = 'alterations'
-		if profileParser.has_option(section, set.getName()):
-			set.setValue(unicode(profileParser.get(section, set.getName()), 'utf-8', 'replace'))
+	if allMachines:
+		n = 0
+		while profileParser.has_section('profile_%d' % (n)):
+			for set in settingsList:
+				if set.isPreference():
+					continue
+				section = 'profile_%d' % (n)
+				if set.isAlteration():
+					section = 'alterations_%d' % (n)
+				if profileParser.has_option(section, set.getName()):
+					set.setValue(unicode(profileParser.get(section, set.getName()), 'utf-8', 'replace'), n)
+			n += 1
+	else:
+		for set in settingsList:
+			if set.isPreference():
+				continue
+			section = 'profile'
+			if set.isAlteration():
+				section = 'alterations'
+			if profileParser.has_option(section, set.getName()):
+				set.setValue(unicode(profileParser.get(section, set.getName()), 'utf-8', 'replace'))
 
-def saveProfile(filename):
+def saveProfile(filename, allMachines = False):
+	global settingsList
 	#Save the current profile to an ini file
 	profileParser = ConfigParser.ConfigParser()
-	profileParser.add_section('profile')
-	profileParser.add_section('alterations')
-	global settingsList
-	for set in settingsList:
-		if set.isPreference() or set.isMachineSetting():
-			continue
-		if set.isAlteration():
-			profileParser.set('alterations', set.getName(), set.getValue().encode('utf-8'))
-		else:
-			profileParser.set('profile', set.getName(), set.getValue().encode('utf-8'))
+	if allMachines:
+		for set in settingsList:
+			if set.isPreference() or set.isMachineSetting():
+				continue
+			for n in xrange(0, getMachineCount()):
+				if set.isAlteration():
+					section = 'alterations_%d' % (n)
+				else:
+					section = 'profile_%d' % (n)
+				if not profileParser.has_section(section):
+					profileParser.add_section(section)
+				profileParser.set(section, set.getName(), set.getValue(n).encode('utf-8'))
+	else:
+		profileParser.add_section('profile')
+		profileParser.add_section('alterations')
+		for set in settingsList:
+			if set.isPreference() or set.isMachineSetting():
+				continue
+			if set.isAlteration():
+				profileParser.set('alterations', set.getName(), set.getValue().encode('utf-8'))
+			else:
+				profileParser.set('profile', set.getName(), set.getValue().encode('utf-8'))
 
 	profileParser.write(open(filename, 'w'))
 
@@ -989,7 +1030,7 @@ def setAlterationFile(name, value):
 	global settingsDictionary
 	if name in settingsDictionary and settingsDictionary[name].isAlteration():
 		settingsDictionary[name].setValue(value)
-	saveProfile(getDefaultProfilePath())
+	saveProfile(getDefaultProfilePath(), True)
 
 def isTagIn(tag, contents):
 	contents = re.sub(';[^\n]*\n', '', contents)
@@ -1042,98 +1083,3 @@ def getAlterationFileContents(filename, extruderCount = 1):
 		#Append the profile string to the end of the GCode, so we can load it from the GCode file later.
 		postfix = ';CURA_PROFILE_STRING:%s\n' % (getProfileString())
 	return unicode(prefix + re.sub("(.)\{([^\}]*)\}", replaceTagMatch, alterationContents).rstrip() + '\n' + postfix).strip().encode('utf-8') + '\n'
-
-###### PLUGIN #####
-
-def getPluginConfig():
-	try:
-		return pickle.loads(str(getProfileSetting('plugin_config')))
-	except:
-		return []
-
-def setPluginConfig(config):
-	putProfileSetting('plugin_config', pickle.dumps(config))
-
-def getPluginBasePaths():
-	ret = []
-	if platform.system() != "Windows":
-		ret.append(os.path.expanduser('~/.cura/plugins/'))
-	if platform.system() == "Darwin" and hasattr(sys, 'frozen'):
-		ret.append(os.path.normpath(os.path.join(resources.resourceBasePath, "Cura/plugins")))
-	else:
-		ret.append(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plugins')))
-	return ret
-
-def getPluginList():
-	ret = []
-	for basePath in getPluginBasePaths():
-		for filename in glob.glob(os.path.join(basePath, '*.py')):
-			filename = os.path.basename(filename)
-			if filename.startswith('_'):
-				continue
-			with open(os.path.join(basePath, filename), "r") as f:
-				item = {'filename': filename, 'name': None, 'info': None, 'type': None, 'params': []}
-				for line in f:
-					line = line.strip()
-					if not line.startswith('#'):
-						break
-					line = line[1:].split(':', 1)
-					if len(line) != 2:
-						continue
-					if line[0].upper() == 'NAME':
-						item['name'] = line[1].strip()
-					elif line[0].upper() == 'INFO':
-						item['info'] = line[1].strip()
-					elif line[0].upper() == 'TYPE':
-						item['type'] = line[1].strip()
-					elif line[0].upper() == 'DEPEND':
-						pass
-					elif line[0].upper() == 'PARAM':
-						m = re.match('([a-zA-Z][a-zA-Z0-9_]*)\(([a-zA-Z_]*)(?::([^\)]*))?\) +(.*)', line[1].strip())
-						if m is not None:
-							item['params'].append({'name': m.group(1), 'type': m.group(2), 'default': m.group(3), 'description': m.group(4)})
-					else:
-						print "Unknown item in effect meta data: %s %s" % (line[0], line[1])
-				if item['name'] is not None and item['type'] == 'postprocess':
-					ret.append(item)
-	return ret
-
-def runPostProcessingPlugins(gcodefilename):
-	pluginConfigList = getPluginConfig()
-	pluginList = getPluginList()
-
-	for pluginConfig in pluginConfigList:
-		plugin = None
-		for pluginTest in pluginList:
-			if pluginTest['filename'] == pluginConfig['filename']:
-				plugin = pluginTest
-		if plugin is None:
-			continue
-
-		pythonFile = None
-		for basePath in getPluginBasePaths():
-			testFilename = os.path.join(basePath, pluginConfig['filename'])
-			if os.path.isfile(testFilename):
-				pythonFile = testFilename
-		if pythonFile is None:
-			continue
-
-		locals = {'filename': gcodefilename}
-		for param in plugin['params']:
-			value = param['default']
-			if param['name'] in pluginConfig['params']:
-				value = pluginConfig['params'][param['name']]
-
-			if param['type'] == 'float':
-				try:
-					value = float(value)
-				except:
-					value = float(param['default'])
-
-			locals[param['name']] = value
-		try:
-			execfile(pythonFile, locals)
-		except:
-			locationInfo = traceback.extract_tb(sys.exc_info()[2])[-1]
-			return "%s: '%s' @ %s:%s:%d" % (str(sys.exc_info()[0].__name__), str(sys.exc_info()[1]), os.path.basename(locationInfo[0]), locationInfo[2], locationInfo[1])
-	return None

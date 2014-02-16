@@ -21,10 +21,15 @@ import struct
 import cStringIO as StringIO
 
 from Cura.util import profile
+from Cura.util import pluginInfo
 from Cura.util import version
 from Cura.util import gcodeInterpreter
 
 def getEngineFilename():
+	"""
+		Finds and returns the path to the current engine executable. This is OS depended.
+	:return: The full path to the engine executable.
+	"""
 	if platform.system() == 'Windows':
 		if version.isDevVersion() and os.path.exists('C:/Software/Cura_SteamEngine/_bin/Release/Cura_SteamEngine.exe'):
 			return 'C:/Software/Cura_SteamEngine/_bin/Release/Cura_SteamEngine.exe'
@@ -37,13 +42,11 @@ def getEngineFilename():
 		return '/usr/local/bin/CuraEngine'
 	return os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'CuraEngine'))
 
-def getTempFilename():
-	warnings.simplefilter('ignore')
-	ret = os.tempnam(None, "Cura_Tmp")
-	warnings.simplefilter('default')
-	return ret
-
 class EngineResult(object):
+	"""
+	Result from running the CuraEngine.
+	Contains the engine log, polygons retrieved from the engine, the GCode and some meta-data.
+	"""
 	def __init__(self):
 		self._engineLog = []
 		self._gcodeData = StringIO.StringIO()
@@ -95,11 +98,17 @@ class EngineResult(object):
 
 	def getGCode(self):
 		data = self._gcodeData.getvalue()
-		block0 = data[0:2048]
-		for k, v in self._replaceInfo.items():
-			v = (v + ' ' * len(k))[:len(k)]
-			block0 = block0.replace(k, v)
-		return block0 + data[2048:]
+		if len(self._replaceInfo) > 0:
+			block0 = data[0:2048]
+			for k, v in self._replaceInfo.items():
+				v = (v + ' ' * len(k))[:len(k)]
+				block0 = block0.replace(k, v)
+			return block0 + data[2048:]
+		return data
+
+	def setGCode(self, gcode):
+		self._gcodeData = StringIO.StringIO(gcode)
+		self._replaceInfo = {}
 
 	def addLog(self, line):
 		self._engineLog.append(line)
@@ -151,6 +160,11 @@ class EngineResult(object):
 			pass
 
 class Engine(object):
+	"""
+	Class used to communicate with the CuraEngine.
+	The CuraEngine is ran as a 2nd process and reports back information trough stderr.
+	GCode trough stdout and has a socket connection for polygon information and loading the 3D model into the engine.
+	"""
 	GUI_CMD_REQUEST_MESH = 0x01
 	GUI_CMD_SEND_POLYGONS = 0x02
 
@@ -363,7 +377,7 @@ class Engine(object):
 		returnCode = self._process.wait()
 		logThread.join()
 		if returnCode == 0:
-			pluginError = None #profile.runPostProcessingPlugins(self._exportFilename)
+			pluginError = pluginInfo.runPostProcessingPlugins(self._result)
 			if pluginError is not None:
 				print pluginError
 				self._result.addLog(pluginError)
@@ -447,7 +461,7 @@ class Engine(object):
 			'minimalExtrusionBeforeRetraction': int(profile.getProfileSettingFloat('retraction_minimal_extrusion') * 1000),
 			'enableCombing': 1 if profile.getProfileSetting('retraction_combing') == 'True' else 0,
 			'multiVolumeOverlap': int(profile.getProfileSettingFloat('overlap_dual') * 1000),
-			'objectSink': int(profile.getProfileSettingFloat('object_sink') * 1000),
+			'objectSink': max(0, int(profile.getProfileSettingFloat('object_sink') * 1000)),
 			'minimalLayerTime': int(profile.getProfileSettingFloat('cool_min_layer_time')),
 			'minimalFeedrate': int(profile.getProfileSettingFloat('cool_min_feedrate')),
 			'coolHeadLift': 1 if profile.getProfileSetting('cool_head_lift') == 'True' else 0,
@@ -466,6 +480,8 @@ class Engine(object):
 		settings['fanFullOnLayerNr'] = (fanFullHeight - settings['initialLayerThickness'] - 1) / settings['layerThickness'] + 1
 		if settings['fanFullOnLayerNr'] < 0:
 			settings['fanFullOnLayerNr'] = 0
+		if profile.getProfileSetting('support_type') == 'Lines':
+			settings['supportType'] = 1
 
 		if profile.getProfileSettingFloat('fill_density') == 0:
 			settings['sparseInfillLineDistance'] = -1
@@ -507,6 +523,8 @@ class Engine(object):
 			settings['layerThickness'] = 1000
 		if profile.getMachineSetting('gcode_flavor') == 'UltiGCode':
 			settings['gcodeFlavor'] = 1
+		elif profile.getMachineSetting('gcode_flavor') == 'MakerBot':
+			settings['gcodeFlavor'] = 2
 		if profile.getProfileSetting('spiralize') == 'True':
 			settings['spiralizeMode'] = 1
 		if profile.getProfileSetting('wipe_tower') == 'True' and extruderCount > 1:

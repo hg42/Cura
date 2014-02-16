@@ -343,7 +343,6 @@ class mainWindow(wx.Frame):
 
 	def OnDropFiles(self, files):
 		if len(files) > 0:
-			profile.setPluginConfig([])
 			self.updateProfileToAllControls()
 		self.scene.loadFiles(files)
 
@@ -553,7 +552,7 @@ class mainWindow(wx.Frame):
 		aboutBox.Show()
 
 	def OnClose(self, e):
-		profile.saveProfile(profile.getDefaultProfilePath())
+		profile.saveProfile(profile.getDefaultProfilePath(), True)
 
 		# Save the window position, size & state from the preferences file
 		profile.putPreference('window_maximized', self.IsMaximized())
