@@ -18,7 +18,7 @@ cleanup
 #target=debian_i386
 target=debian_amd64
 
-./package.sh $target
+sudo ./package.sh $target
 
 sudo dpkg -i scripts/linux/*$target.deb(N)
 

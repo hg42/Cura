@@ -402,6 +402,9 @@ class printWindowBasic(wx.Frame):
 	def OnErrorLog(self, e):
 		LogWindow(self._printerConnection.getErrorLog())
 
+	def _addTermLog(self, line):
+		pass
+
 	def _doPrinterConnectionUpdate(self, connection, extraInfo = None):
 		wx.CallAfter(self.__doPrinterConnectionUpdate, connection, extraInfo)
 		#temp = [connection.getTemperature(0)]
