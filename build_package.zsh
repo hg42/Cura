@@ -22,6 +22,8 @@ sudo ./package.sh $target
 
 sudo dpkg -i scripts/linux/*$target.deb(N)
 
+mine scripts/linux/
+
 cleanup
 
 cura
