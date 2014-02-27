@@ -483,7 +483,10 @@ def getBasePath():
 	else:
 		basePath = os.path.expanduser('~/.cura/%s' % version.getVersion(False))
 	if not os.path.isdir(basePath):
-		os.makedirs(basePath)
+		try:
+			os.makedirs(basePath)
+		except:
+			print "Failed to create directory: %s" % (basePath)
 	return basePath
 
 def getAlternativeBasePaths():
@@ -628,12 +631,12 @@ def getProfileString():
 			if set.getName() in tempOverride:
 				p.append(set.getName() + "=" + tempOverride[set.getName()])
 			else:
-				p.append(set.getName() + "=" + set.getValue())
+				p.append(set.getName() + "=" + set.getValue().encode('utf-8'))
 		elif set.isAlteration():
 			if set.getName() in tempOverride:
 				alt.append(set.getName() + "=" + tempOverride[set.getName()])
 			else:
-				alt.append(set.getName() + "=" + set.getValue())
+				alt.append(set.getName() + "=" + set.getValue().encode('utf-8'))
 	ret = '\b'.join(p) + '\f' + '\b'.join(alt)
 	ret = base64.b64encode(zlib.compress(ret, 9))
 	return ret
@@ -652,7 +655,7 @@ def getPreferencesString():
 	global settingsList
 	for set in settingsList:
 		if set.isPreference():
-			p.append(set.getName() + "=" + set.getValue())
+			p.append(set.getName() + "=" + set.getValue().encode('utf-8'))
 	ret = '\b'.join(p)
 	ret = base64.b64encode(zlib.compress(ret, 9))
 	return ret

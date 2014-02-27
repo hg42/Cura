@@ -294,7 +294,7 @@ class SceneView(openglGui.glGuiPanel):
 	def showSaveGCode(self):
 		if len(self._scene._objectList) < 1:
 			return
-		dlg=wx.FileDialog(self, _("Save toolpath"), os.path.dirname(profile.getPreference('lastFile')), style=wx.FD_SAVE)
+		dlg=wx.FileDialog(self, _("Save toolpath"), os.path.dirname(profile.getPreference('lastFile')), style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
 		filename = self._scene._objectList[0].getName() + '.gcode'
 		dlg.SetFilename(filename)
 		dlg.SetWildcard('Toolpath (*.gcode)|*.gcode;*.g')
@@ -1372,7 +1372,7 @@ class SceneView(openglGui.glGuiPanel):
 		return self._selectedObj.getMatrix()
 
 #TODO: Remove this or put it in a seperate file
-class shaderEditor(wx.Dialog):
+class shaderEditor(wx.Frame):
 	def __init__(self, parent, callback, v, f):
 		super(shaderEditor, self).__init__(parent, title="Shader editor", style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
 		self._callback = callback
