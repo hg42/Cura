@@ -252,6 +252,7 @@ setting('start.gcode', """;Sliced at: {day} {date} {time}
 ;M109 S{print_temperature} ;Uncomment to add your own temperature line
 G21        ;metric values
 G90        ;absolute positioning
+M82        ;set extruder to absolute mode
 M107       ;start with the fan off
 
 G28 X0 Y0  ;move X/Y to min endstops
@@ -361,7 +362,7 @@ setting('model_colour', '#FFC924', str, 'preference', 'hidden').setLabel(_('Mode
 setting('model_colour2', '#CB3030', str, 'preference', 'hidden').setLabel(_('Model colour (2)'), _('Display color for second extruder'))
 setting('model_colour3', '#DDD93C', str, 'preference', 'hidden').setLabel(_('Model colour (3)'), _('Display color for third extruder'))
 setting('model_colour4', '#4550D3', str, 'preference', 'hidden').setLabel(_('Model colour (4)'), _('Display color for forth extruder'))
-setting('printing_window', 'Basic', ['Basic'], 'preference', 'hidden').setLabel('Printing window type')
+setting('printing_window', 'Basic', ['Basic'], 'preference', 'hidden').setLabel(_('Printing window type'), _('Select the interface used for USB printing.'))
 
 setting('window_maximized', 'True', bool, 'preference', 'hidden')
 setting('window_pos_x', '-1', float, 'preference', 'hidden')
