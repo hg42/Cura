@@ -246,8 +246,8 @@ class printWindowPlugin(wx.Frame):
 					button.Enable(self._printerConnection.isPrinting())
 				else:
 					button.Enable(False)
-			elif button.command == self.script_showErrorLog:
-				button.Show(self._printerConnection.isInErrorState())
+			#elif button.command == self.script_showErrorLog:
+			#	button.Show(self._printerConnection.isInErrorState())
 		if self._termInput is not None:
 			self._termInput.Enable(self._printerConnection.isAbleToSendDirectCommand())
 
