@@ -30,7 +30,7 @@ else:
 
 class printWindowPlugin(wx.Frame):
 	def __init__(self, parent, printerConnection, filename):
-		super(printWindowPlugin, self).__init__(parent, -1, style=wx.CLOSE_BOX|wx.CLIP_CHILDREN|wx.CAPTION|wx.SYSTEM_MENU|wx.FRAME_TOOL_WINDOW|wx.FRAME_FLOAT_ON_PARENT, title=_("Printing on %s") % (printerConnection.getName()))
+		super(printWindowPlugin, self).__init__(parent, -1, style=wx.CLOSE_BOX|wx.CLIP_CHILDREN|wx.CAPTION|wx.SYSTEM_MENU|wx.FRAME_FLOAT_ON_PARENT|wx.MINIMIZE_BOX, title=_("Printing on %s") % (printerConnection.getName()))
 		self._printerConnection = printerConnection
 		self._basePath = os.path.dirname(filename)
 		self._backgroundImage = None
@@ -322,7 +322,7 @@ class printWindowBasic(wx.Frame):
 		self.OnPowerWarningChange(None)
 		self.powerWarningTimer.Start(10000)
 
-		self.statsText = wx.StaticText(self.panel, -1, _("InfoLine from printer connection\nInfoLine from dialog"))
+		self.statsText = wx.StaticText(self.panel, -1, _("InfoLine from printer connection\nInfoLine from dialog\nExtra line"))
 
 		self.connectButton = wx.Button(self.panel, -1, _("Connect"))
 		#self.loadButton = wx.Button(self.panel, -1, 'Load')
