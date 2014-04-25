@@ -18,6 +18,7 @@ import urllib2
 import hashlib
 import socket
 import struct
+import errno
 import cStringIO as StringIO
 
 from Cura.util import profile
@@ -193,18 +194,22 @@ class Engine(object):
 					break
 			else:
 				break
-		print 'Listening for engine communications on %d' % (self._serverPortNr)
-		self._serversocket.listen(1)
 		thread = threading.Thread(target=self._socketListenThread)
 		thread.daemon = True
 		thread.start()
 
 	def _socketListenThread(self):
+		self._serversocket.listen(1)
+		print 'Listening for engine communications on %d' % (self._serverPortNr)
 		while True:
-			sock, _ = self._serversocket.accept()
-			thread = threading.Thread(target=self._socketConnectionThread, args=(sock,))
-			thread.daemon = True
-			thread.start()
+			try:
+				sock, _ = self._serversocket.accept()
+				thread = threading.Thread(target=self._socketConnectionThread, args=(sock,))
+				thread.daemon = True
+				thread.start()
+			except socket.error, e:
+				if e.errno != errno.EINTR:
+					raise
 
 	def _socketConnectionThread(self, sock):
 		layerNrOffset = 0
@@ -443,6 +448,7 @@ class Engine(object):
 			'filamentDiameter': int(profile.getProfileSettingFloat('filament_diameter') * 1000),
 			'filamentFlow': int(profile.getProfileSettingFloat('filament_flow')),
 			'extrusionWidth': int(profile.calculateEdgeWidth() * 1000),
+			'layer0extrusionWidth': int(profile.calculateEdgeWidth() * 1000),
 			'insetCount': int(profile.calculateLineCount()),
 			'downSkinCount': int(profile.calculateSolidLayerCount()) if profile.getProfileSetting('solid_bottom') == 'True' else 0,
 			'upSkinCount': int(profile.calculateSolidLayerCount()) if profile.getProfileSetting('solid_top') == 'True' else 0,
@@ -514,6 +520,15 @@ class Engine(object):
 			settings['raftBaseLinewidth'] = int(profile.getProfileSettingFloat('raft_base_linewidth') * 1000)
 			settings['raftInterfaceThickness'] = int(profile.getProfileSettingFloat('raft_interface_thickness') * 1000)
 			settings['raftInterfaceLinewidth'] = int(profile.getProfileSettingFloat('raft_interface_linewidth') * 1000)
+			settings['raftInterfaceLineSpacing'] = int(profile.getProfileSettingFloat('raft_interface_linewidth') * 1000 * 2.0)
+			settings['raftAirGap'] = int(profile.getProfileSettingFloat('raft_airgap') * 1000)
+			settings['raftBaseSpeed'] = int(profile.getProfileSettingFloat('bottom_layer_speed'))
+			settings['raftFanSpeed'] = 100
+			settings['raftSurfaceThickness'] = settings['raftInterfaceThickness']
+			settings['raftSurfaceLinewidth'] = int(profile.calculateEdgeWidth() * 1000)
+			settings['raftSurfaceLineSpacing'] = int(profile.calculateEdgeWidth() * 1000 * 0.9)
+			settings['raftSurfaceLayers'] = int(profile.getProfileSettingFloat('raft_surface_layers'))
+			settings['raftSurfaceSpeed'] = int(profile.getProfileSettingFloat('bottom_layer_speed'))
 		else:
 			settings['skirtDistance'] = int(profile.getProfileSettingFloat('skirt_gap') * 1000)
 			settings['skirtLineCount'] = int(profile.getProfileSettingFloat('skirt_line_count'))
@@ -534,6 +549,12 @@ class Engine(object):
 			settings['gcodeFlavor'] = 1
 		elif profile.getMachineSetting('gcode_flavor') == 'MakerBot':
 			settings['gcodeFlavor'] = 2
+		elif profile.getMachineSetting('gcode_flavor') == 'BFB':
+			settings['gcodeFlavor'] = 3
+		elif profile.getMachineSetting('gcode_flavor') == 'Mach3':
+			settings['gcodeFlavor'] = 4
+		elif profile.getMachineSetting('gcode_flavor') == 'RepRap (Volumetric)':
+			settings['gcodeFlavor'] = 5
 		if profile.getProfileSetting('spiralize') == 'True':
 			settings['spiralizeMode'] = 1
 		if profile.getProfileSetting('wipe_tower') == 'True' and extruderCount > 1:

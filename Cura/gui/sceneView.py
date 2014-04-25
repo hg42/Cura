@@ -7,7 +7,7 @@ import os
 import traceback
 import threading
 import math
-import platform
+import sys
 import cStringIO as StringIO
 
 import OpenGL
@@ -252,7 +252,7 @@ class SceneView(openglGui.glGuiPanel):
 					dlg.Destroy()
 				else:
 					drive = drives[0]
-				filename = self._scene._objectList[0].getName() + '.gcode'
+				filename = self._scene._objectList[0].getName() + profile.getGCodeExtension()
 				threading.Thread(target=self._saveGCode,args=(drive[1] + filename, drive[1])).start()
 			elif connectionGroup is not None:
 				connections = connectionGroup.getAvailableConnections()
@@ -303,9 +303,9 @@ class SceneView(openglGui.glGuiPanel):
 		if len(self._scene._objectList) < 1:
 			return
 		dlg=wx.FileDialog(self, _("Save toolpath"), os.path.dirname(profile.getPreference('lastFile')), style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-		filename = self._scene._objectList[0].getName() + '.gcode'
+		filename = self._scene._objectList[0].getName() + profile.getGCodeExtension()
 		dlg.SetFilename(filename)
-		dlg.SetWildcard('Toolpath (*.gcode)|*.gcode;*.g')
+		dlg.SetWildcard('Toolpath (*%s)|*%s;*%s' % (profile.getGCodeExtension(), profile.getGCodeExtension(), profile.getGCodeExtension()[0:2]))
 		if dlg.ShowModal() != wx.ID_OK:
 			dlg.Destroy()
 			return
@@ -664,7 +664,7 @@ class SceneView(openglGui.glGuiPanel):
 	def OnKeyChar(self, keyCode):
 		if self._engineResultView.OnKeyChar(keyCode):
 			return
-		if keyCode == wx.WXK_DELETE or keyCode == wx.WXK_NUMPAD_DELETE or (keyCode == wx.WXK_BACK and platform.system() == "Darwin"):
+		if keyCode == wx.WXK_DELETE or keyCode == wx.WXK_NUMPAD_DELETE or (keyCode == wx.WXK_BACK and sys.platform.startswith("darwin")):
 			if self._selectedObj is not None:
 				self._deleteObject(self._selectedObj)
 				self.QueueRefresh()
