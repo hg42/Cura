@@ -8,8 +8,6 @@ import os
 import sys
 import glob
 
-#Cura/util classes should not depend on wx...
-import wx
 import gettext
 
 if sys.platform.startswith('darwin'):
@@ -65,9 +63,10 @@ def setupLocalization(selectedLanguage = None):
 def getLanguageOptions():
 	return [
 		['en', 'English'],
-		# ['de', 'Deutsch'],
-		# ['fr', 'French'],
+		['de', 'Deutsch'],
+		['fr', 'French'],
+		['cs', 'Cesky'],
 		# ['nl', 'Nederlands'],
-		# ['sp', 'Spanish'],
+		# ['es', 'Spanish'],
 		# ['po', 'Polish']
 	]

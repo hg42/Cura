@@ -465,8 +465,8 @@ class mainWindow(wx.Frame):
 			for line in f:
 				if line.startswith(';CURA_PROFILE_STRING:'):
 					profile.setProfileFromString(line[line.find(':')+1:].strip())
-					if ';{profile_string}' not in profile.getProfileSetting('end.gcode'):
-						profile.putProfileSetting('end.gcode', profile.getProfileSetting('end.gcode') + '\n;{profile_string}')
+					if ';{profile_string}' not in profile.getAlterationFile('end.gcode'):
+						profile.setAlterationFile('end.gcode', profile.getAlterationFile('end.gcode') + '\n;{profile_string}')
 					hasProfile = True
 			if hasProfile:
 				self.updateProfileToAllControls()
@@ -479,7 +479,7 @@ class mainWindow(wx.Frame):
 		dlg.SetWildcard("ini files (*.ini)|*.ini")
 		if dlg.ShowModal() == wx.ID_OK:
 			profileFile = dlg.GetPath()
-			if platform.system() == 'Linux': #hack for linux, as for some reason the .ini is not appended.
+			if not profileFile.lower().endswith('.ini'): #hack for linux, as for some reason the .ini is not appended.
 				profileFile += '.ini'
 			profile.saveProfile(profileFile)
 		dlg.Destroy()
@@ -510,6 +510,7 @@ class mainWindow(wx.Frame):
 		dlg.SetWildcard("HEX file (*.hex)|*.hex;*.HEX")
 		if dlg.ShowModal() == wx.ID_OK:
 			filename = dlg.GetPath()
+			dlg.Destroy()
 			if not(os.path.exists(filename)):
 				return
 			#For some reason my Ubuntu 10.10 crashes here.
